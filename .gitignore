@@ -1,0 +1,120 @@
+# Dependencies
+node_modules/
+vendor/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+public/build/
+.cache/
+.vite/
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.docker
+
+# Database
+*.sqlite
+*.sqlite3
+postgres-data/
+mongodb-data/
+redis-data/
+elasticsearch-data/
+minio-data/
+
+# Docker
+docker-compose.override.yml
+*.dockerignore
+
+# AI/ML
+*.h5
+*.hdf5
+*.pth
+*.pt
+*.pb
+*.onnx
+*.tensorflow
+*.keras
+models/
+weights/
+datasets/
+data/
+*.npy
+*.npz
+
+# Medical data
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+*.nrrd
+
+# OS files
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Backups
+backups/
+
+# CI artifacts
+.github/workflows/*.yml
+.gitlab-ci.yml
+circle.yml
+
+# Local dev
+.devcontainer/
+.vscode/settings.json
