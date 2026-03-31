@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { authenticateToken } from '../middleware/auth';
 import { success, error, badRequest, notFound } from '../utils/response';
 import { GenerateReportRequest, UpdateReportRequest } from '../types';
-import { getReportRepository, getAnalysisTaskRepository, getStudyRepository } from '../repositories/BaseRepository';
+import { getReportRepository, getAnalysisTaskRepository, getStudyRepository, getAnalysisResultRepository, getPatientRepository } from '../repositories/BaseRepository';
+import { pdfGenerationService } from '../services/PdfGenerationService';
 
 const router = express.Router();
 
@@ -128,10 +129,30 @@ router.get('/:id.pdf', async (req, res) => {
       return notFound(res, 'Report not found');
     }
 
-    // TODO: Implement actual PDF generation
+    // Get patient information
+    const patient = await getPatientRepository().findById(study.patientId, req.user.tenantId);
+    if (!patient) {
+      return notFound(res, 'Patient not found');
+    }
+
+    // Get analysis results if available
+    let analysisResult;
+    if (report.analysisTaskId) {
+      analysisResult = await getAnalysisResultRepository().findByTaskId(report.analysisTaskId);
+    }
+
+    // Generate PDF
+    const pdfBuffer = await pdfGenerationService.generateReport({
+      report,
+      patient,
+      study,
+      analysisResult: analysisResult || undefined,
+    });
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="report-${id}.pdf"`);
-    res.send(Buffer.from('PDF content placeholder'));
+    res.setHeader('Content-Disposition', `attachment; filename="medical-report-${id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length.toString());
+    res.send(pdfBuffer);
   } catch (err) {
     return error(res, 'server_error', 'Failed to download report');
   }

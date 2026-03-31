@@ -103,7 +103,10 @@ export interface AnalysisResult {
   reportText?: string;
   metrics?: {
     inferenceTimeMs?: number;
+    totalFindings?: number;
+    confidenceScore?: number;
   };
+  rawOutput?: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -217,6 +220,10 @@ export interface GenerateReportRequest {
 export interface UpdateReportRequest {
   content?: Record<string, unknown>;
   status?: 'draft' | 'review' | 'approved' | 'signed' | 'archived';
+}
+
+export interface UpdateCurrentUserRequest {
+  fullName?: string;
 }
 
 export interface GetUploadUrlRequest {

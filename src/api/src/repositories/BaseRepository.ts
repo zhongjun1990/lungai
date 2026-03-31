@@ -22,6 +22,8 @@ export const getUserRepository = () => {
         inMemoryStore.updateUserLastLogin(user.id);
         return user;
       },
+      update: (id: string, updates: { fullName?: string; status?: 'active' | 'inactive' | 'suspended' }) =>
+        Promise.resolve(inMemoryStore.updateUser(id, updates)),
     };
   }
   return userRepository;
@@ -85,6 +87,12 @@ export const getAnalysisTaskRepository = () => {
     countByTenant: () => Promise.resolve(0),
     delete: () => Promise.resolve(false),
   };
+};
+
+// Analysis Results Repository - always uses MongoDB (stored by AI service)
+export const getAnalysisResultRepository = () => {
+  const { analysisResultRepository } = require('./AnalysisResultRepository');
+  return analysisResultRepository;
 };
 
 // Reports Repository

@@ -4,7 +4,68 @@ import { v4 as uuidv4 } from 'uuid';
 import { authenticateToken } from '../middleware/auth';
 import { success, error, badRequest, notFound } from '../utils/response';
 import { SubmitAnalysisTaskRequest } from '../types';
-import { getAnalysisTaskRepository, getStudyRepository } from '../repositories/BaseRepository';
+import { getAnalysisTaskRepository, getStudyRepository, getAnalysisResultRepository } from '../repositories/BaseRepository';
+import { config } from '../config';
+
+// In-memory sample analysis results for development
+const sampleAnalysisResults: Record<string, {
+  taskId: string;
+  status: string;
+  findings: Array<{
+    type: string;
+    confidence: number;
+    bbox?: { x: number; y: number; width: number; height: number };
+    volume?: number;
+    description?: string;
+  }>;
+  visualizationUrl?: string;
+  reportText?: string;
+  metrics?: {
+    inferenceTimeMs?: number;
+    totalFindings?: number;
+    confidenceScore?: number;
+  };
+}> = {
+  't1-1234567890': {
+    taskId: 't1-1234567890',
+    status: 'completed',
+    findings: [
+      {
+        type: 'lung_nodule',
+        confidence: 0.85,
+        bbox: { x: 120, y: 150, width: 25, height: 25 },
+        volume: 12.5,
+        description: 'Small pulmonary nodule detected in right upper lobe',
+      },
+      {
+        type: 'lung_nodule',
+        confidence: 0.72,
+        bbox: { x: 280, y: 320, width: 18, height: 18 },
+        volume: 5.2,
+        description: 'Small pulmonary nodule detected in left lower lobe',
+      },
+    ],
+    reportText: `Analysis Findings (2 total):
+
+1. lung_nodule
+   Confidence: 85.0%
+   Small pulmonary nodule detected in right upper lobe
+   Location: x=120, y=150, w=25, h=25
+   Estimated volume: 12.50 mm³
+
+2. lung_nodule
+   Confidence: 72.0%
+   Small pulmonary nodule detected in left lower lobe
+   Location: x=280, y=320, w=18, h=18
+   Estimated volume: 5.20 mm³
+`,
+    metrics: {
+      inferenceTimeMs: 1250,
+      totalFindings: 2,
+      confidenceScore: 0.785,
+    },
+  },
+};
 
 const router = express.Router();
 
@@ -102,11 +163,43 @@ router.get('/:id/results', async (req, res) => {
       return notFound(res, 'Analysis task not found');
     }
 
-    // TODO: Return actual analysis results from MongoDB
+    // First try to get results from MongoDB
+    let results = null;
+    try {
+      results = await getAnalysisResultRepository().findByTaskId(id);
+    } catch (err) {
+      // MongoDB might not be available, continue to sample data
+    }
+
+    // If no results in MongoDB and using memory store, return sample data
+    if (!results && (config.server.nodeEnv === 'development' || !config.database.mongodb.uri)) {
+      const sample = sampleAnalysisResults[id];
+      if (sample) {
+        results = {
+          id: `result-${id}`,
+          taskId: id,
+          modelId: task.modelId,
+          modelVersion: task.modelVersion,
+          findings: sample.findings,
+          visualizationUrl: sample.visualizationUrl,
+          reportText: sample.reportText,
+          metrics: sample.metrics,
+          createdAt: new Date(),
+        };
+      }
+    }
+
+    if (!results) {
+      return notFound(res, 'Analysis results not found');
+    }
+
     return success(res, {
       taskId: id,
       status: task.status,
-      findings: [],
+      findings: results.findings,
+      reportText: results.reportText,
+      visualizationUrl: results.visualizationUrl,
+      metrics: results.metrics,
     });
   } catch (err) {
     return error(res, 'server_error', 'Failed to get analysis results');

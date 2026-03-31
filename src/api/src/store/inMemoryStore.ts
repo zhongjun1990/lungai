@@ -127,6 +127,18 @@ export const inMemoryStore = {
       user.lastLoginAt = new Date();
     }
   },
+  updateUser: (id: string, updates: { fullName?: string; status?: 'active' | 'inactive' | 'suspended' }) => {
+    const index = store.users.findIndex(u => u.id === id);
+    if (index !== -1) {
+      store.users[index] = {
+        ...store.users[index],
+        ...updates,
+        updatedAt: new Date(),
+      };
+      return store.users[index];
+    }
+    return null;
+  },
 
   // Patients
   getPatients: (tenantId: string) => store.patients.filter(p => p.tenantId === tenantId),
