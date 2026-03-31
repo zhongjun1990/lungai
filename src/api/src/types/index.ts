@@ -165,6 +165,7 @@ export interface RefreshTokenRequest {
 }
 
 export interface CreatePatientRequest {
+  id?: string;
   mrn: string;
   firstName: string;
   lastName: string;
@@ -181,6 +182,7 @@ export interface UpdatePatientRequest {
 }
 
 export interface CreateStudyRequest {
+  id?: string;
   studyInstanceUid?: string;
   patientId: string;
   studyDate: string;

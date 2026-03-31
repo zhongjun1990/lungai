@@ -80,10 +80,10 @@ docker-compose.override.yml
 *.onnx
 *.tensorflow
 *.keras
-models/
-weights/
-datasets/
-data/
+/models/
+/weights/
+/datasets/
+/data/
 *.npy
 *.npz
 

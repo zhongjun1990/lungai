@@ -1,41 +1,140 @@
 // Reports Routes
 import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { authenticateToken } from '../middleware/auth';
-import { success } from '../utils/response';
+import { success, error, badRequest, notFound } from '../utils/response';
+import { GenerateReportRequest, UpdateReportRequest } from '../types';
+import { getReportRepository, getAnalysisTaskRepository, getStudyRepository } from '../repositories/BaseRepository';
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
 // List reports
-router.get('/', (req, res) => {
-  const { page = 1, perPage = 20, studyId, status } = req.query;
-  // TODO: Implement report listing
-  return success(res, [], { total: 0, page: Number(page), perPage: Number(perPage) });
+router.get('/', async (req, res) => {
+  try {
+    const { page = 1, perPage = 20 } = req.query;
+    const tenantId = req.user.tenantId;
+
+    const reports = await getReportRepository().listByTenant(tenantId);
+    const total = await getReportRepository().countByTenant(tenantId);
+
+    return success(res, reports, {
+      total,
+      page: Number(page),
+      perPage: Number(perPage),
+    });
+  } catch (err) {
+    return error(res, 'server_error', 'Failed to list reports');
+  }
 });
 
 // Generate report
-router.post('/', (req, res) => {
-  // TODO: Implement report generation
-  return success(res, { message: 'Report generated (placeholder)' });
+router.post('/', async (req, res) => {
+  try {
+    const { analysisTaskId, templateId, parameters }: GenerateReportRequest = req.body;
+
+    if (!analysisTaskId) {
+      return badRequest(res, 'analysisTaskId is required');
+    }
+
+    // Verify analysis task exists
+    const task = await getAnalysisTaskRepository().findById(analysisTaskId);
+    if (!task) {
+      return notFound(res, 'Analysis task not found');
+    }
+
+    // Verify study exists and belongs to tenant
+    const study = await getStudyRepository().findById(task.studyId, req.user.tenantId);
+    if (!study) {
+      return notFound(res, 'Study not found');
+    }
+
+    const report = await getReportRepository().create({
+      id: uuidv4(),
+      studyId: task.studyId,
+      analysisTaskId,
+      templateId,
+      status: 'draft',
+      content: parameters,
+    });
+
+    return success(res, report);
+  } catch (err) {
+    return error(res, 'server_error', 'Failed to generate report');
+  }
 });
 
 // Get report
-router.get('/:id', (req, res) => {
-  // TODO: Implement report retrieval
-  return success(res, { message: 'Report details (placeholder)' });
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await getReportRepository().findById(id);
+
+    if (!report) {
+      return notFound(res, 'Report not found');
+    }
+
+    // Verify report belongs to study in tenant
+    const study = await getStudyRepository().findById(report.studyId, req.user.tenantId);
+    if (!study) {
+      return notFound(res, 'Report not found');
+    }
+
+    return success(res, report);
+  } catch (err) {
+    return error(res, 'server_error', 'Failed to get report');
+  }
 });
 
 // Update report
-router.patch('/:id', (req, res) => {
-  // TODO: Implement report update
-  return success(res, { message: 'Report updated (placeholder)' });
+router.patch('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates: UpdateReportRequest = req.body;
+
+    const report = await getReportRepository().findById(id);
+    if (!report) {
+      return notFound(res, 'Report not found');
+    }
+
+    // Verify report belongs to study in tenant
+    const study = await getStudyRepository().findById(report.studyId, req.user.tenantId);
+    if (!study) {
+      return notFound(res, 'Report not found');
+    }
+
+    const updatedReport = await getReportRepository().update(id, updates);
+
+    return success(res, updatedReport);
+  } catch (err) {
+    return error(res, 'server_error', 'Failed to update report');
+  }
 });
 
 // Download report as PDF
-router.get('/:id.pdf', (req, res) => {
-  // TODO: Implement report PDF download
-  return success(res, { message: 'Report PDF download (placeholder)' });
+router.get('/:id.pdf', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await getReportRepository().findById(id);
+
+    if (!report) {
+      return notFound(res, 'Report not found');
+    }
+
+    // Verify report belongs to study in tenant
+    const study = await getStudyRepository().findById(report.studyId, req.user.tenantId);
+    if (!study) {
+      return notFound(res, 'Report not found');
+    }
+
+    // TODO: Implement actual PDF generation
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="report-${id}.pdf"`);
+    res.send(Buffer.from('PDF content placeholder'));
+  } catch (err) {
+    return error(res, 'server_error', 'Failed to download report');
+  }
 });
 
 export { router as reportsRouter };

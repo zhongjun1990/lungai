@@ -1,37 +1,13 @@
 // Authentication Routes
 import express from 'express';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { success, error, badRequest, unauthorized } from '../utils/response';
 import { parseExpiresIn } from '../utils/jwt';
 import { LoginRequest, LoginResponse } from '../types';
+import { getUserRepository } from '../repositories/BaseRepository';
 
 const router = express.Router();
-
-// Dummy user data (replace with database implementation)
-const users = [
-  {
-    id: 'a1b2c3d4-5678-90ef-ghij-klmnopqrstuv',
-    email: 'admin@hospital.com',
-    passwordHash: bcrypt.hashSync('admin123', 12),
-    fullName: 'System Administrator',
-    role: 'admin' as const,
-    tenantId: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-    status: 'active' as const,
-    createdAt: new Date(),
-  },
-  {
-    id: 'b2c3d4e5-6789-01fg-hijk-lmnopqrstuvw',
-    email: 'doctor@hospital.com',
-    passwordHash: bcrypt.hashSync('doctor123', 12),
-    fullName: 'Dr. Zhang Wei',
-    role: 'radiologist' as const,
-    tenantId: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-    status: 'active' as const,
-    createdAt: new Date(),
-  },
-];
 
 // Login
 router.post('/login', async (req, res) => {
@@ -43,29 +19,28 @@ router.post('/login', async (req, res) => {
       return badRequest(res, 'email, password, and tenantId are required');
     }
 
-    // Find user
-    const user = users.find(u => u.email === email && u.tenantId === tenantId);
+    // Find user and verify password
+    const user = await getUserRepository().verifyPassword(email, password, tenantId);
     if (!user) {
       return unauthorized(res, 'Invalid credentials');
     }
 
-    // Check password
-    const validPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!validPassword) {
-      return unauthorized(res, 'Invalid credentials');
+    // Check user status
+    if (user.status === 'inactive' || user.status === 'suspended') {
+      return unauthorized(res, 'Account is inactive');
     }
 
     // Generate tokens
-    const accessToken = jwt.sign(
+    const accessToken = (jwt as any).sign(
       { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
-      config.auth.jwtSecret,
-      { expiresIn: config.auth.jwtExpiresIn }
+      config.auth.jwtSecret as string,
+      { expiresIn: config.auth.jwtExpiresIn as string }
     );
 
-    const refreshToken = jwt.sign(
+    const refreshToken = (jwt as any).sign(
       { id: user.id },
-      config.auth.jwtSecret,
-      { expiresIn: config.auth.jwtRefreshExpiresIn }
+      config.auth.jwtSecret as string,
+      { expiresIn: config.auth.jwtRefreshExpiresIn as string }
     );
 
     const response: LoginResponse = {
@@ -91,19 +66,24 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Verify refresh token
-    const decoded = jwt.verify(refreshToken, config.auth.jwtSecret) as { id: string };
+    const decoded = (jwt as any).verify(refreshToken, config.auth.jwtSecret as string) as { id: string };
 
     // Find user
-    const user = users.find(u => u.id === decoded.id);
+    const user = await getUserRepository().findById(decoded.id);
     if (!user) {
       return unauthorized(res, 'Invalid refresh token');
     }
 
+    // Check user status
+    if (user.status === 'inactive' || user.status === 'suspended') {
+      return unauthorized(res, 'Account is inactive');
+    }
+
     // Generate new access token
-    const accessToken = jwt.sign(
+    const accessToken = (jwt as any).sign(
       { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
-      config.auth.jwtSecret,
-      { expiresIn: config.auth.jwtExpiresIn }
+      config.auth.jwtSecret as string,
+      { expiresIn: config.auth.jwtExpiresIn as string }
     );
 
     const response: LoginResponse = {

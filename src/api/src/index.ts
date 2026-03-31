@@ -19,6 +19,8 @@ import { studiesRouter } from './routes/studies';
 import { analysisRouter } from './routes/analysis';
 import { reportsRouter } from './routes/reports';
 import { systemRouter } from './routes/system';
+import { connectMongoDB } from './database/mongodb';
+import { connectRedis } from './database/redis';
 
 // Initialize Express app
 const app = express();
@@ -108,6 +110,24 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
 // Start server
 const startServer = async () => {
   try {
+    // Connect to databases
+    if (config.server.nodeEnv !== 'test') {
+      logger.info('Connecting to databases...');
+      try {
+        await connectMongoDB();
+        logger.info('MongoDB connection successful');
+      } catch (err) {
+        logger.warn('MongoDB connection failed:', err);
+      }
+
+      try {
+        await connectRedis();
+        logger.info('Redis connection successful');
+      } catch (err) {
+        logger.warn('Redis connection failed:', err);
+      }
+    }
+
     const { port, host } = config.server;
 
     app.listen(port, host, () => {

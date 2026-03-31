@@ -22,12 +22,13 @@ export function authenticateToken(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): void {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return unauthorized(res, 'Authentication required');
+    unauthorized(res, 'Authentication required');
+    return;
   }
 
   try {
@@ -35,20 +36,23 @@ export function authenticateToken(
     req.user = decoded;
     next();
   } catch (err) {
-    return unauthorized(res, 'Invalid or expired token');
+    unauthorized(res, 'Invalid or expired token');
+    return;
   }
 }
 
 export function requireRole(
   ...roles: User['role'][]
 ) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return unauthorized(res, 'Authentication required');
+      unauthorized(res, 'Authentication required');
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return forbidden(res, 'Insufficient permissions');
+      forbidden(res, 'Insufficient permissions');
+      return;
     }
 
     next();
@@ -59,11 +63,12 @@ export function requireTenant(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-) {
+): void {
   const resourceTenantId = req.params.tenantId || req.body.tenantId;
 
   if (resourceTenantId && req.user.tenantId !== resourceTenantId) {
-    return forbidden(res, 'Access to this resource is restricted');
+    forbidden(res, 'Access to this resource is restricted');
+    return;
   }
 
   next();
