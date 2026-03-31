@@ -26,7 +26,7 @@ export const useStore = create<StoreState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
 
-  login: async (email, password) => {
+  login: async (_email: string, _password: string) => {
     set({ isLoading: true });
 
     try {
