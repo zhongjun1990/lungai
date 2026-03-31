@@ -1,0 +1,2418 @@
+openapi: 3.0.3
+info:
+  title: AI Medical Imaging Analysis API
+  description: |
+    RESTful API for the AI Medical Imaging Analysis SaaS platform.
+    This API provides endpoints for managing patients, studies, imaging data,
+    AI analysis tasks, reports, and system administration.
+
+    ## Authentication
+
+    All API requests (except the login endpoint) require authentication using
+    Bearer tokens obtained via the `/v1/auth/login` endpoint.
+
+    Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+
+    ## Versioning
+
+    API version is included in the URL path. This specification documents version 1.
+
+    ## Rate Limiting
+
+    The API implements rate limiting. Clients exceeding the rate limit will
+    receive a 429 Too Many Requests response.
+
+    - Default: 1000 requests per minute
+    - File upload: 100 requests per minute
+
+    ## Response Format
+
+    All successful responses follow this format:
+    ```json
+    {
+      "data": { /* response data */ },
+      "meta": { /* pagination and metadata */ },
+      "links": { /* pagination links */ }
+    }
+    ```
+
+    Error responses follow this format:
+    ```json
+    {
+      "error": {
+        "code": "error_code",
+        "message": "Human readable error message",
+        "details": "Additional details (optional)",
+        "request_id": "request-uuid"
+      }
+    }
+    ```
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@medical-imaging.example.com
+    url: https://medical-imaging.example.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://medical-imaging.example.com/terms
+
+servers:
+  - url: https://api.medical-imaging.example.com/v1
+    description: Production server
+  - url: https://staging-api.medical-imaging.example.com/v1
+    description: Staging server
+  - url: http://localhost:8000/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: Users
+    description: User profile and account management
+  - name: Patients
+    description: Patient information management
+  - name: Studies
+    description: Imaging studies and examination records
+  - name: Series
+    description: Imaging series and series metadata
+  - name: Instances
+    description: DICOM instances and file operations
+  - name: Analysis
+    description: AI analysis tasks and results
+  - name: Reports
+    description: Report generation and management
+  - name: System
+    description: System administration and health checks
+  - name: FHIR
+    description: FHIR (Fast Healthcare Interoperability Resources) endpoints
+  - name: DICOMweb
+    description: DICOMweb standard endpoints (WADO-RS, QIDO-RS, STOW-RS)
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate a user with email and password to receive access tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              Doctor:
+                value:
+                  email: doctor@hospital.com
+                  password: "secure-password-123"
+                  tenant_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+              Admin:
+                value:
+                  email: admin@hospital.com
+                  password: "admin-password-123"
+                  tenant_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+      responses:
+        '200':
+          description: Successful login
+          headers:
+            X-Request-ID:
+              description: Unique request identifier for debugging
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security: []
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Use a refresh token to obtain a new access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security: []
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate the current access token
+      operationId: logout
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    patch:
+      tags:
+        - Users
+      summary: Update current user profile
+      description: Update the authenticated user's profile information
+      operationId: updateCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /patients:
+    get:
+      tags:
+        - Patients
+      summary: List patients
+      description: Retrieve a paginated list of patients with optional filtering and search
+      operationId: listPatients
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - name: query
+          in: query
+          description: Search query for patient name or MRN
+          required: false
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          description: Field to sort by
+          required: false
+          schema:
+            type: string
+            enum: [created_at, last_name, birth_date]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Patients
+      summary: Create a patient
+      description: Create a new patient record
+      operationId: createPatient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+      responses:
+        '201':
+          description: Patient created successfully
+          headers:
+            Location:
+              description: URL of the created patient
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /patients/{patient_id}:
+    parameters:
+      - name: patient_id
+        in: path
+        description: Patient UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Patients
+      summary: Get patient details
+      description: Retrieve detailed information about a specific patient
+      operationId: getPatient
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    patch:
+      tags:
+        - Patients
+      summary: Update patient
+      description: Update an existing patient's information
+      operationId: updatePatient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePatientRequest'
+      responses:
+        '200':
+          description: Patient updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /studies:
+    get:
+      tags:
+        - Studies
+      summary: List studies
+      description: Retrieve a paginated list of imaging studies
+      operationId: listStudies
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - name: patient_id
+          in: query
+          description: Filter by patient ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: modality
+          in: query
+          description: Filter by modality (CT, MR, CR, DX, etc.)
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by study status
+          required: false
+          schema:
+            type: string
+            enum: [pending, processing, completed, archived]
+        - name: start_date
+          in: query
+          description: Filter by study date (start, inclusive)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          description: Filter by study date (end, inclusive)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Studies
+      summary: Create a study
+      description: Create a new imaging study record
+      operationId: createStudy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStudyRequest'
+      responses:
+        '201':
+          description: Study created successfully
+          headers:
+            Location:
+              description: URL of the created study
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /studies/{study_id}:
+    parameters:
+      - name: study_id
+        in: path
+        description: Study UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Studies
+      summary: Get study details
+      description: Retrieve detailed information about a specific study including its series
+      operationId: getStudy
+      parameters:
+        - name: include_series
+          in: query
+          description: Include series details in response
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyDetailResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Study not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    patch:
+      tags:
+        - Studies
+      summary: Update study
+      description: Update an existing study's information
+      operationId: updateStudy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStudyRequest'
+      responses:
+        '200':
+          description: Study updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Study not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /studies/{study_id}/series:
+    parameters:
+      - name: study_id
+        in: path
+        description: Study UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Series
+      summary: List series for a study
+      description: Retrieve all series belonging to a specific study
+      operationId: listStudySeries
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Study not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /instances/upload-url:
+    post:
+      tags:
+        - Instances
+      summary: Get pre-signed upload URL
+      description: Request a pre-signed URL for uploading a DICOM instance directly to object storage
+      operationId: getUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetUploadUrlRequest'
+      responses:
+        '200':
+          description: Pre-signed URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUploadUrlResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /instances/{instance_id}:
+    parameters:
+      - name: instance_id
+        in: path
+        description: Instance UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Instances
+      summary: Get instance details
+      description: Retrieve metadata about a specific DICOM instance
+      operationId: getInstance
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Instance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /instances/{instance_id}/thumbnail:
+    parameters:
+      - name: instance_id
+        in: path
+        description: Instance UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Instances
+      summary: Get instance thumbnail
+      description: Retrieve a thumbnail image of a DICOM instance
+      operationId: getInstanceThumbnail
+      parameters:
+        - name: width
+          in: query
+          description: Thumbnail width in pixels
+          required: false
+          schema:
+            type: integer
+            minimum: 64
+            maximum: 1024
+            default: 256
+        - name: height
+          in: query
+          description: Thumbnail height in pixels
+          required: false
+          schema:
+            type: integer
+            minimum: 64
+            maximum: 1024
+            default: 256
+        - name: format
+          in: query
+          description: Image format
+          required: false
+          schema:
+            type: string
+            enum: [jpeg, png]
+            default: jpeg
+      responses:
+        '200':
+          description: Thumbnail image
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Instance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /analysis-tasks:
+    get:
+      tags:
+        - Analysis
+      summary: List analysis tasks
+      description: Retrieve a paginated list of AI analysis tasks
+      operationId: listAnalysisTasks
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - name: study_id
+          in: query
+          description: Filter by study ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by task status
+          required: false
+          schema:
+            type: string
+            enum: [pending, queued, processing, completed, failed, cancelled]
+        - name: model_id
+          in: query
+          description: Filter by model ID
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisTaskListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Analysis
+      summary: Submit analysis task
+      description: Submit a new AI analysis task for a study
+      operationId: submitAnalysisTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnalysisTaskRequest'
+            examples:
+              BrainTumorDetection:
+                value:
+                  study_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                  model_id: "brain-tumor-detection"
+                  model_version: "1.0.0"
+                  parameters:
+                    threshold: 0.7
+                    use_tta: true
+                  priority: 5
+              LungNoduleDetection:
+                value:
+                  study_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                  model_id: "lung-nodule-detection"
+                  model_version: "1.2.0"
+                  priority: 3
+      responses:
+        '202':
+          description: Task submitted successfully
+          headers:
+            Location:
+              description: URL to check task status
+              schema:
+                type: string
+                format: uri
+            X-Status-URL:
+              description: URL to check task status
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisTaskResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Study not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /analysis-tasks/{task_id}:
+    parameters:
+      - name: task_id
+        in: path
+        description: Analysis task UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Analysis
+      summary: Get analysis task details
+      description: Retrieve detailed information about a specific analysis task
+      operationId: getAnalysisTask
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisTaskDetailResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Analysis
+      summary: Cancel analysis task
+      description: Cancel a pending or queued analysis task
+      operationId: cancelAnalysisTask
+      responses:
+        '204':
+          description: Task cancelled successfully
+        '400':
+          description: Task cannot be cancelled (already in progress or completed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /analysis-tasks/{task_id}/status:
+    parameters:
+      - name: task_id
+        in: path
+        description: Analysis task UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Analysis
+      summary: Get task status
+      description: Retrieve the current status and progress of an analysis task
+      operationId: getAnalysisTaskStatus
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisTaskStatusResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /analysis-tasks/{task_id}/results:
+    parameters:
+      - name: task_id
+        in: path
+        description: Analysis task UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Analysis
+      summary: Get analysis results
+      description: Retrieve the analysis results for a completed task
+      operationId: getAnalysisTaskResults
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResultsResponse'
+        '400':
+          description: Task not completed yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /reports:
+    get:
+      tags:
+        - Reports
+      summary: List reports
+      description: Retrieve a paginated list of generated reports
+      operationId: listReports
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - name: study_id
+          in: query
+          description: Filter by study ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by report status
+          required: false
+          schema:
+            type: string
+            enum: [draft, review, approved, signed, archived]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Reports
+      summary: Generate a report
+      description: Generate a report from an analysis result using a template
+      operationId: generateReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportRequest'
+      responses:
+        '201':
+          description: Report generated successfully
+          headers:
+            Location:
+              description: URL of the generated report
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Analysis result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /reports/{report_id}:
+    parameters:
+      - name: report_id
+        in: path
+        description: Report UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Reports
+      summary: Get report details
+      description: Retrieve detailed information about a specific report
+      operationId: getReport
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDetailResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    patch:
+      tags:
+        - Reports
+      summary: Update report
+      description: Update a report's content or status
+      operationId: updateReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReportRequest'
+      responses:
+        '200':
+          description: Report updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /reports/{report_id}.pdf:
+    parameters:
+      - name: report_id
+        in: path
+        description: Report UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Reports
+      summary: Download report as PDF
+      description: Download a report in PDF format
+      operationId: downloadReportPdf
+      responses:
+        '200':
+          description: PDF report
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /system/status:
+    get:
+      tags:
+        - System
+      summary: Get system status
+      description: Retrieve overall system health status and service availability
+      operationId: getSystemStatus
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatusResponse'
+      security:
+        - bearerAuth: []
+
+  /fhir/Patient/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: Patient resource ID
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags:
+        - FHIR
+      summary: Get FHIR Patient resource
+      description: Retrieve a FHIR Patient resource
+      operationId: getFhirPatient
+      responses:
+        '200':
+          description: FHIR Patient resource
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /fhir/DiagnosticReport/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: DiagnosticReport resource ID
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags:
+        - FHIR
+      summary: Get FHIR DiagnosticReport resource
+      description: Retrieve a FHIR DiagnosticReport resource
+      operationId: getFhirDiagnosticReport
+      responses:
+        '200':
+          description: FHIR DiagnosticReport resource
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: DiagnosticReport not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT authentication using Bearer tokens.
+        Obtain a token via /auth/login endpoint.
+
+  parameters:
+    page:
+      name: page
+      in: query
+      description: Page number (1-based)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    per_page:
+      name: per_page
+      in: query
+      description: Number of items per page
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    # ========== Request/Response Envelopes ==========
+    BaseResponse:
+      type: object
+      properties:
+        data:
+          description: Response data
+        meta:
+          type: object
+          description: Pagination metadata
+          properties:
+            total:
+              type: integer
+              description: Total number of items
+            page:
+              type: integer
+              description: Current page number
+            per_page:
+              type: integer
+              description: Number of items per page
+        links:
+          type: object
+          description: Pagination links
+          properties:
+            self:
+              type: string
+              format: uri
+              description: Link to current page
+            next:
+              type: string
+              format: uri
+              nullable: true
+              description: Link to next page
+            prev:
+              type: string
+              format: uri
+              nullable: true
+              description: Link to previous page
+            first:
+              type: string
+              format: uri
+              description: Link to first page
+            last:
+              type: string
+              format: uri
+              description: Link to last page
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - invalid_parameter
+                - missing_parameter
+                - invalid_credentials
+                - insufficient_permissions
+                - resource_not_found
+                - duplicate_resource
+                - resource_conflict
+                - rate_limit_exceeded
+                - server_error
+                - service_unavailable
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: string
+              description: Additional error details (optional)
+            request_id:
+              type: string
+              format: uuid
+              description: Unique request identifier for debugging
+          example:
+            code: invalid_parameter
+            message: The 'study_uid' parameter is required
+            details: Missing required query parameter
+            request_id: 123e4567-e89b-12d3-a456-426614174001
+
+    # ========== Authentication ==========
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+        - tenant_id
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        password:
+          type: string
+          format: password
+          description: User's password
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant/Organization ID
+
+    LoginResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required:
+            - access_token
+            - refresh_token
+            - token_type
+            - expires_in
+          properties:
+            access_token:
+              type: string
+              description: JWT access token for API authentication
+            refresh_token:
+              type: string
+              description: Token to refresh the access token
+            token_type:
+              type: string
+              enum: [Bearer]
+              description: Token type (always Bearer)
+            expires_in:
+              type: integer
+              description: Access token expiration in seconds (default 3600)
+          example:
+            access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            token_type: Bearer
+            expires_in: 3600
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: Refresh token from previous login
+
+    # ========== Users ==========
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - full_name
+        - role
+        - tenant_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User UUID
+        email:
+          type: string
+          format: email
+          description: User's email address
+        full_name:
+          type: string
+          description: User's full name
+        role:
+          type: string
+          enum: [admin, radiologist, technician, viewer]
+          description: User's role
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant/Organization ID
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          description: Account status
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        last_login_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last login timestamp
+
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          description: Updated full name
+
+    # ========== Patients ==========
+    Patient:
+      type: object
+      required:
+        - id
+        - mrn
+        - first_name
+        - last_name
+        - birth_date
+        - gender
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Patient UUID
+        mrn:
+          type: string
+          description: Medical Record Number
+        first_name:
+          type: string
+          description: Patient's first name
+        last_name:
+          type: string
+          description: Patient's last name
+        birth_date:
+          type: string
+          format: date
+          description: Patient's date of birth
+        gender:
+          type: string
+          enum: [male, female, other, unknown]
+          description: Patient's gender
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    PatientResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Patient'
+
+    PatientListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+
+    CreatePatientRequest:
+      type: object
+      required:
+        - mrn
+        - first_name
+        - last_name
+        - birth_date
+        - gender
+      properties:
+        mrn:
+          type: string
+          description: Medical Record Number
+        first_name:
+          type: string
+          description: Patient's first name
+        last_name:
+          type: string
+          description: Patient's last name
+        birth_date:
+          type: string
+          format: date
+          description: Patient's date of birth
+        gender:
+          type: string
+          enum: [male, female, other, unknown]
+          description: Patient's gender
+
+    UpdatePatientRequest:
+      type: object
+      properties:
+        mrn:
+          type: string
+          description: Updated MRN
+        first_name:
+          type: string
+          description: Updated first name
+        last_name:
+          type: string
+          description: Updated last name
+        birth_date:
+          type: string
+          format: date
+          description: Updated date of birth
+        gender:
+          type: string
+          enum: [male, female, other, unknown]
+          description: Updated gender
+
+    # ========== Studies ==========
+    Study:
+      type: object
+      required:
+        - id
+        - patient_id
+        - study_date
+        - modality
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Study UUID
+        study_instance_uid:
+          type: string
+          description: DICOM Study Instance UID
+        patient_id:
+          type: string
+          format: uuid
+          description: Patient UUID
+        study_date:
+          type: string
+          format: date
+          description: Study date
+        study_time:
+          type: string
+          format: time
+          nullable: true
+          description: Study time
+        modality:
+          type: string
+          description: Modality (CT, MR, CR, DX, etc.)
+        body_part:
+          type: string
+          nullable: true
+          description: Body part examined
+        description:
+          type: string
+          nullable: true
+          description: Study description
+        physician_name:
+          type: string
+          nullable: true
+          description: Referring physician name
+        status:
+          type: string
+          enum: [pending, processing, completed, archived]
+          description: Study status
+        series_count:
+          type: integer
+          description: Number of series in the study
+        instance_count:
+          type: integer
+          description: Number of instances in the study
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    StudyResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Study'
+
+    StudyListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Study'
+
+    StudyDetailResponse:
+      type: object
+      properties:
+        data:
+          allOf:
+            - $ref: '#/components/schemas/Study'
+            - type: object
+              properties:
+                series:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Series'
+                  description: Series included in the study
+
+    CreateStudyRequest:
+      type: object
+      required:
+        - patient_id
+        - study_date
+        - modality
+      properties:
+        study_instance_uid:
+          type: string
+          description: DICOM Study Instance UID
+        patient_id:
+          type: string
+          format: uuid
+          description: Patient UUID
+        study_date:
+          type: string
+          format: date
+          description: Study date
+        study_time:
+          type: string
+          format: time
+          nullable: true
+          description: Study time
+        modality:
+          type: string
+          description: Modality (CT, MR, CR, DX, etc.)
+        body_part:
+          type: string
+          nullable: true
+          description: Body part examined
+        description:
+          type: string
+          nullable: true
+          description: Study description
+        physician_name:
+          type: string
+          nullable: true
+          description: Referring physician name
+
+    UpdateStudyRequest:
+      type: object
+      properties:
+        body_part:
+          type: string
+          description: Updated body part
+        description:
+          type: string
+          description: Updated study description
+        physician_name:
+          type: string
+          description: Updated physician name
+        status:
+          type: string
+          enum: [pending, processing, completed, archived]
+          description: Updated study status
+
+    # ========== Series ==========
+    Series:
+      type: object
+      required:
+        - id
+        - study_id
+        - series_number
+        - modality
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Series UUID
+        study_id:
+          type: string
+          format: uuid
+          description: Study UUID
+        series_instance_uid:
+          type: string
+          description: DICOM Series Instance UID
+        series_number:
+          type: integer
+          description: Series number
+        modality:
+          type: string
+          description: Modality
+        description:
+          type: string
+          nullable: true
+          description: Series description
+        number_of_instances:
+          type: integer
+          description: Number of instances in the series
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+
+    SeriesListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Series'
+
+    # ========== Instances ==========
+    Instance:
+      type: object
+      required:
+        - id
+        - series_id
+        - file_location
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Instance UUID
+        series_id:
+          type: string
+          format: uuid
+          description: Series UUID
+        sop_instance_uid:
+          type: string
+          description: DICOM SOP Instance UID
+        instance_number:
+          type: integer
+          nullable: true
+          description: Instance number
+        file_location:
+          type: string
+          description: Object storage file path
+        file_size:
+          type: integer
+          format: int64
+          nullable: true
+          description: File size in bytes
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+
+    InstanceResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Instance'
+
+    GetUploadUrlRequest:
+      type: object
+      required:
+        - study_instance_uid
+        - series_instance_uid
+        - sop_instance_uid
+        - filename
+        - content_type
+      properties:
+        study_instance_uid:
+          type: string
+          description: DICOM Study Instance UID
+        series_instance_uid:
+          type: string
+          description: DICOM Series Instance UID
+        sop_instance_uid:
+          type: string
+          description: DICOM SOP Instance UID
+        filename:
+          type: string
+          description: Original filename
+        content_type:
+          type: string
+          description: File content type
+
+    GetUploadUrlResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required:
+            - upload_url
+            - upload_method
+            - expires_in
+          properties:
+            upload_url:
+              type: string
+              format: uri
+              description: Pre-signed upload URL
+            upload_method:
+              type: string
+              enum: [PUT, POST]
+              description: HTTP method to use for upload
+            expires_in:
+              type: integer
+              description: URL expiration in seconds
+            upload_headers:
+              type: object
+              additionalProperties:
+                type: string
+              description: Required headers for upload
+
+    # ========== Analysis Tasks ==========
+    AnalysisTask:
+      type: object
+      required:
+        - id
+        - study_id
+        - model_id
+        - model_version
+        - status
+        - priority
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Task UUID
+        study_id:
+          type: string
+          format: uuid
+          description: Study UUID
+        model_id:
+          type: string
+          description: AI model identifier
+        model_version:
+          type: string
+          description: Model version
+        status:
+          type: string
+          enum: [pending, queued, processing, completed, failed, cancelled]
+          description: Task status
+        priority:
+          type: integer
+          description: Priority (higher = more urgent)
+        parameters:
+          type: object
+          nullable: true
+          description: Model-specific parameters
+        error_message:
+          type: string
+          nullable: true
+          description: Error message if failed
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Processing start time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Processing completion time
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation timestamp
+
+    AnalysisTaskResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AnalysisTask'
+
+    AnalysisTaskListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalysisTask'
+
+    AnalysisTaskDetailResponse:
+      type: object
+      properties:
+        data:
+          allOf:
+            - $ref: '#/components/schemas/AnalysisTask'
+
+    AnalysisTaskStatusResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - status
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Task UUID
+            status:
+              type: string
+              enum: [pending, queued, processing, completed, failed, cancelled]
+              description: Current status
+            progress:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 100
+              description: Progress percentage
+            started_at:
+              type: string
+              format: date-time
+              nullable: true
+              description: Processing start time
+            estimated_completion:
+              type: string
+              format: date-time
+              nullable: true
+              description: Estimated completion time
+
+    AnalysisResultsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - task_id
+            - model_id
+            - model_version
+            - created_at
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Result UUID
+            task_id:
+              type: string
+              format: uuid
+              description: Analysis task UUID
+            model_id:
+              type: string
+              description: AI model identifier
+            model_version:
+              type: string
+              description: Model version
+            findings:
+              type: array
+              items:
+                type: object
+                required:
+                  - type
+                  - confidence
+                properties:
+                  type:
+                    type: string
+                    description: Finding type (tumor, nodule, lesion, etc.)
+                  confidence:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 1
+                    description: Confidence score
+                  bbox:
+                    type: object
+                    required:
+                      - x
+                      - y
+                      - width
+                      - height
+                    properties:
+                      x:
+                        type: number
+                      y:
+                        type: number
+                      width:
+                        type: number
+                      height:
+                        type: number
+                    description: Bounding box coordinates
+                  volume:
+                    type: number
+                    format: float
+                    nullable: true
+                    description: Estimated volume in cm³
+                  description:
+                    type: string
+                    nullable: true
+                    description: Human-readable description
+              description: AI findings
+            visualization_url:
+              type: string
+              format: uri
+              nullable: true
+              description: URL for visualization overlay
+            report_text:
+              type: string
+              nullable: true
+              description: Generated report text
+            metrics:
+              type: object
+              properties:
+                inference_time_ms:
+                  type: integer
+                  description: Total inference time in milliseconds
+              description: Performance metrics
+            created_at:
+              type: string
+              format: date-time
+              description: Result creation timestamp
+
+    SubmitAnalysisTaskRequest:
+      type: object
+      required:
+        - study_id
+        - model_id
+        - model_version
+      properties:
+        study_id:
+          type: string
+          format: uuid
+          description: Study UUID to analyze
+        model_id:
+          type: string
+          description: AI model identifier
+        model_version:
+          type: string
+          description: Model version
+        parameters:
+          type: object
+          nullable: true
+          description: Model-specific parameters
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+          description: Priority (1-10, higher = more urgent)
+
+    # ========== Reports ==========
+    Report:
+      type: object
+      required:
+        - id
+        - study_id
+        - analysis_task_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Report UUID
+        study_id:
+          type: string
+          format: uuid
+          description: Study UUID
+        analysis_task_id:
+          type: string
+          format: uuid
+          description: Analysis task UUID
+        template_id:
+          type: string
+          nullable: true
+          description: Template used for generation
+        status:
+          type: string
+          enum: [draft, review, approved, signed, archived]
+          description: Report status
+        signed_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who signed the report
+        signed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Signing timestamp
+        created_at:
+          type: string
+          format: date-time
+          description: Report creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    ReportResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Report'
+
+    ReportListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+
+    ReportDetailResponse:
+      type: object
+      properties:
+        data:
+          allOf:
+            - $ref: '#/components/schemas/Report'
+            - type: object
+              properties:
+                content:
+                  type: object
+                  description: Report content (JSON structure)
+
+    GenerateReportRequest:
+      type: object
+      required:
+        - analysis_task_id
+      properties:
+        analysis_task_id:
+          type: string
+          format: uuid
+          description: Analysis task UUID
+        template_id:
+          type: string
+          nullable: true
+          description: Template to use for generation
+        parameters:
+          type: object
+          nullable: true
+          description: Template-specific parameters
+
+    UpdateReportRequest:
+      type: object
+      properties:
+        content:
+          type: object
+          description: Updated report content
+        status:
+          type: string
+          enum: [draft, review, approved, signed, archived]
+          description: Updated report status
+
+    # ========== System ==========
+    SystemStatusResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required:
+            - status
+            - version
+            - uptime
+          properties:
+            status:
+              type: string
+              enum: [healthy, warning, critical]
+              description: Overall system status
+            version:
+              type: string
+              description: API version
+            uptime:
+              type: integer
+              format: int64
+              description: Uptime in seconds
+            services:
+              type: array
+              items:
+                type: object
+                required:
+                  - name
+                  - status
+                properties:
+                  name:
+                    type: string
+                    description: Service name
+                  status:
+                    type: string
+                    enum: [healthy, warning, critical]
+                    description: Service status
+                  response_time_ms:
+                    type: integer
+                    nullable: true
+                    description: Average response time in milliseconds
+              description: Individual service statuses
+            resources:
+              type: object
+              properties:
+                cpu:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 1
+                  description: CPU utilization (0-1)
+                memory:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 1
+                  description: Memory utilization (0-1)
+                gpu:
+                  type: object
+                  nullable: true
+                  properties:
+                    memory:
+                      type: number
+                      format: float
+                      minimum: 0
+                      maximum: 1
+                    utilization:
+                      type: number
+                      format: float
+                      minimum: 0
+                      maximum: 1
+                  description: GPU utilization (if available)
+              description: System resource utilization
