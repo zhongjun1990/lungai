@@ -1,0 +1,49 @@
+{
+  "name": "medical-imaging-ai",
+  "version": "1.0.0",
+  "description": "AI Medical Imaging Analysis - Inference Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "pino": "^8.17.2",
+    "pino-http": "^8.6.1",
+    "amqplib": "^0.10.3",
+    "mongoose": "^8.0.3",
+    "redis": "^4.6.12",
+    "zod": "^3.22.4",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1",
+    "@tensorflow/tfjs-node": "^4.15.0",
+    "sharp": "^0.33.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/amqplib": "^0.10.4",
+    "@types/uuid": "^9.0.7",
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.17.0",
+    "@typescript-eslint/parser": "^6.17.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
