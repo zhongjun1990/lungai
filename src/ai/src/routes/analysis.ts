@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { messageQueueService } from '../services';
 import { resultRepository } from '../repositories/ResultRepository';
 import { logger } from '../utils/logger';
+import { badRequest, error, success } from '../utils/response';
 
 const router = express.Router();
 
@@ -24,9 +25,7 @@ router.post('/tasks', async (req, res) => {
     const { studyId, modelId, modelVersion = 'v1.0.0', parameters = {} } = req.body;
 
     if (!studyId || !modelId) {
-      return res.status(400).json({
-        error: 'Missing required fields: studyId and modelId are required',
-      });
+      return badRequest(res, 'Missing required fields: studyId and modelId are required');
     }
 
     const taskId = uuidv4();
@@ -49,9 +48,7 @@ router.post('/tasks', async (req, res) => {
     });
   } catch (err) {
     logger.error('Failed to create analysis task:', err);
-    res.status(500).json({
-      error: err instanceof Error ? err.message : 'Failed to create analysis task',
-    });
+    return error(res, err instanceof Error ? err.message : 'Failed to create analysis task');
   }
 });
 
@@ -61,17 +58,13 @@ router.get('/results/:taskId', async (req, res) => {
     const result = await resultRepository.findByTaskId(taskId);
 
     if (!result) {
-      return res.status(404).json({
-        error: 'Result not found for this task',
-      });
+      return badRequest(res, 'Result not found for this task');
     }
 
-    res.json(result);
+    return success(res, result);
   } catch (err) {
     logger.error('Failed to get analysis result:', err);
-    res.status(500).json({
-      error: err instanceof Error ? err.message : 'Failed to get analysis result',
-    });
+    return error(res, err instanceof Error ? err.message : 'Failed to get analysis result');
   }
 });
 

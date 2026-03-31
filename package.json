@@ -9,6 +9,7 @@
   "workspaces": [
     "src/web",
     "src/api",
+    "src/ai",
     "src/mobile"
   ],
   "scripts": {
@@ -16,9 +17,10 @@
     "dev:services": "docker-compose up -d postgres redis minio mongodb elasticsearch rabbitmq",
     "dev:api": "cd src/api && npm run dev",
     "dev:web": "cd src/web && npm run dev",
-    "dev:ai": "cd src/ai && pip install -e . && python -m medical_imaging_ai.server",
-    "build": "npm run build:api && npm run build:web",
+    "dev:ai": "cd src/ai && npm run dev",
+    "build": "npm run build:api && npm run build:ai && npm run build:web",
     "build:api": "cd src/api && npm run build",
+    "build:ai": "cd src/ai && npm run build",
     "build:web": "cd src/web && npm run build",
     "test": "npm run test:unit",
     "test:unit": "jest",
@@ -27,16 +29,16 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
-    "db:migrate": "cd src/api && npx prisma migrate deploy",
-    "db:seed": "cd src/api && npx prisma db seed",
-    "db:reset": "cd src/api && npx prisma migrate reset",
+    "db:migrate": "cd src/api && npm run db:migrate",
+    "db:seed": "cd src/api && npm run db:seed",
+    "db:reset": "cd src/api && npm run db:reset",
     "compose:up": "docker-compose up -d",
     "compose:down": "docker-compose down",
     "compose:logs": "docker-compose logs -f",
     "compose:restart": "docker-compose restart",
     "compose:clean": "docker-compose down -v --remove-orphans",
     "health:check": "node scripts/healthcheck.js",
-    "setup": "npm run compose:up && npm run db:migrate && npm run db:seed"
+    "setup": "npm run compose:up"
   },
   "dependencies": {
     "@types/node": "^20.0.0",

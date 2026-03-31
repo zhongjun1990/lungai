@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ApiResponse<T> {
   data: T;
@@ -42,6 +43,7 @@ export function badRequest(res: Response, message: string) {
     error: {
       code: 'bad_request',
       message,
+      requestId: uuidv4(),
     },
   });
 }
@@ -51,6 +53,7 @@ export function unauthorized(res: Response, message: string) {
     error: {
       code: 'unauthorized',
       message,
+      requestId: uuidv4(),
     },
   });
 }
@@ -60,6 +63,7 @@ export function forbidden(res: Response, message: string) {
     error: {
       code: 'forbidden',
       message,
+      requestId: uuidv4(),
     },
   });
 }
@@ -69,6 +73,7 @@ export function notFound(res: Response, message: string) {
     error: {
       code: 'not_found',
       message,
+      requestId: uuidv4(),
     },
   });
 }
@@ -79,6 +84,7 @@ export function error(res: Response, message: string, details?: string) {
       code: 'server_error',
       message,
       details,
+      requestId: uuidv4(),
     },
   });
 }

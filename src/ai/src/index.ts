@@ -10,6 +10,7 @@ import { connectMongoDB } from './database';
 import { storageService } from './services';
 import { messageQueueService } from './services/MessageQueueService';
 import { AnalysisWorker } from './workers/AnalysisWorker';
+import { notFound, error as sendError } from './utils/response';
 
 const app = express();
 
@@ -36,24 +37,15 @@ app.use('/health', healthRouter);
 app.use('/api/analysis', analysisRouter);
 
 app.use('*', (req, res) => {
-  res.status(404).json({
-    error: {
-      code: 'resource_not_found',
-      message: 'The requested resource was not found',
-    },
-  });
+  return notFound(res, 'The requested resource was not found');
 });
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('Unhandled error:', err);
-  res.status(500).json({
-    error: {
-      code: 'server_error',
-      message: config.server.nodeEnv === 'production'
-        ? 'Internal server error'
-        : err.message,
-    },
-  });
+  const message = config.server.nodeEnv === 'production'
+    ? 'Internal server error'
+    : err.message;
+  return sendError(res, message);
 });
 
 const startServer = async () => {
