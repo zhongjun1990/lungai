@@ -19,6 +19,7 @@
     "dev:web": "cd src/web && npm run dev",
     "dev:ai": "cd src/ai && npm run dev",
     "build": "npm run build:api && npm run build:ai && npm run build:web",
+    "build:mvp": "npm run build:api && npm run build:web",
     "build:api": "cd src/api && npm run build",
     "build:ai": "cd src/ai && npm run build",
     "build:web": "cd src/web && npm run build",
