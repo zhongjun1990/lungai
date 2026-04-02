@@ -15,19 +15,54 @@ export interface CreateResultParams {
 export class ResultRepository {
   async findById(id: string): Promise<AnalysisResult | null> {
     const result = await AnalysisResultModel.findById(id);
-    return result ? result.toObject() : null;
+    if (!result) return null;
+    const obj = result.toObject();
+    return {
+      taskId: obj.taskId,
+      modelId: obj.modelId,
+      modelVersion: obj.modelVersion,
+      findings: obj.findings,
+      visualizationUrl: obj.visualizationUrl,
+      reportText: obj.reportText,
+      metrics: obj.metrics || { inferenceTimeMs: 0, totalFindings: 0, confidenceScore: 0 },
+      rawOutput: obj.rawOutput,
+      createdAt: obj.createdAt,
+    };
   }
 
   async findByTaskId(taskId: string): Promise<AnalysisResult | null> {
     const result = await AnalysisResultModel.findOne({ taskId });
-    return result ? result.toObject() : null;
+    if (!result) return null;
+    const obj = result.toObject();
+    return {
+      taskId: obj.taskId,
+      modelId: obj.modelId,
+      modelVersion: obj.modelVersion,
+      findings: obj.findings,
+      visualizationUrl: obj.visualizationUrl,
+      reportText: obj.reportText,
+      metrics: obj.metrics || { inferenceTimeMs: 0, totalFindings: 0, confidenceScore: 0 },
+      rawOutput: obj.rawOutput,
+      createdAt: obj.createdAt,
+    };
   }
 
   async create(params: CreateResultParams): Promise<AnalysisResult> {
     const result = await AnalysisResultModel.create({
       ...params,
     });
-    return result.toObject();
+    const obj = result.toObject();
+    return {
+      taskId: obj.taskId,
+      modelId: obj.modelId,
+      modelVersion: obj.modelVersion,
+      findings: obj.findings,
+      visualizationUrl: obj.visualizationUrl,
+      reportText: obj.reportText,
+      metrics: obj.metrics || { inferenceTimeMs: 0, totalFindings: 0, confidenceScore: 0 },
+      rawOutput: obj.rawOutput,
+      createdAt: obj.createdAt,
+    };
   }
 
   async update(id: string, updates: Partial<AnalysisResult>): Promise<AnalysisResult | null> {
@@ -36,7 +71,19 @@ export class ResultRepository {
       updates,
       { new: true }
     );
-    return result ? result.toObject() : null;
+    if (!result) return null;
+    const obj = result.toObject();
+    return {
+      taskId: obj.taskId,
+      modelId: obj.modelId,
+      modelVersion: obj.modelVersion,
+      findings: obj.findings,
+      visualizationUrl: obj.visualizationUrl,
+      reportText: obj.reportText,
+      metrics: obj.metrics || { inferenceTimeMs: 0, totalFindings: 0, confidenceScore: 0 },
+      rawOutput: obj.rawOutput,
+      createdAt: obj.createdAt,
+    };
   }
 
   async delete(id: string): Promise<boolean> {

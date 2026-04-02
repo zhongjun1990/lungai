@@ -76,7 +76,7 @@ export class AnalysisWorker {
       const modelOutput = await modelService.predict(modelInput);
 
       if (!modelOutput.success) {
-        throw new Error(modelOutput.rawOutput?.error || 'Model prediction failed');
+        throw new Error(typeof modelOutput.rawOutput?.error === 'string' ? modelOutput.rawOutput.error : 'Model prediction failed');
       }
 
       const visualizationKey = `results/${task.id}/visualization.png`;

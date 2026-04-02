@@ -29,13 +29,13 @@ router.post('/tasks', async (req, res) => {
     }
 
     const taskId = uuidv4();
-    const task = {
+    const task: any = {
       id: taskId,
       studyId,
       modelId,
       modelVersion,
       parameters,
-      status: 'pending',
+      status: 'pending' as const,
       startedAt: new Date(),
     };
 

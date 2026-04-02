@@ -65,18 +65,18 @@ class ModelService {
         kernelSize: 3,
         activation: 'relu',
         padding: 'same'
-      }).apply(inputs);
-      const pool1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(conv1);
+      }).apply(inputs) as tf.SymbolicTensor;
+      const pool1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(conv1) as tf.SymbolicTensor;
       const conv2 = tf.layers.conv2d({
         filters: 64,
         kernelSize: 3,
         activation: 'relu',
         padding: 'same'
-      }).apply(pool1);
-      const pool2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(conv2);
-      const flatten = tf.layers.flatten().apply(pool2);
-      const dense1 = tf.layers.dense({ units: 128, activation: 'relu' }).apply(flatten);
-      const outputs = tf.layers.dense({ units: 1, activation: 'sigmoid' }).apply(dense1);
+      }).apply(pool1) as tf.SymbolicTensor;
+      const pool2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(conv2) as tf.SymbolicTensor;
+      const flatten = tf.layers.flatten().apply(pool2) as tf.SymbolicTensor;
+      const dense1 = tf.layers.dense({ units: 128, activation: 'relu' }).apply(flatten) as tf.SymbolicTensor;
+      const outputs = tf.layers.dense({ units: 1, activation: 'sigmoid' }).apply(dense1) as tf.SymbolicTensor;
 
       return tf.model({ inputs, outputs });
     }
@@ -86,11 +86,11 @@ class ModelService {
       filters: 16,
       kernelSize: 3,
       activation: 'relu'
-    }).apply(inputs);
-    const pool = tf.layers.maxPooling2d({ poolSize: 2 }).apply(conv);
-    const flatten = tf.layers.flatten().apply(pool);
-    const dense = tf.layers.dense({ units: 64, activation: 'relu' }).apply(flatten);
-    const outputs = tf.layers.dense({ units: 1, activation: 'sigmoid' }).apply(dense);
+    }).apply(inputs) as tf.SymbolicTensor;
+    const pool = tf.layers.maxPooling2d({ poolSize: 2 }).apply(conv) as tf.SymbolicTensor;
+    const flatten = tf.layers.flatten().apply(pool) as tf.SymbolicTensor;
+    const dense = tf.layers.dense({ units: 64, activation: 'relu' }).apply(flatten) as tf.SymbolicTensor;
+    const outputs = tf.layers.dense({ units: 1, activation: 'sigmoid' }).apply(dense) as tf.SymbolicTensor;
 
     return tf.model({ inputs, outputs });
   }

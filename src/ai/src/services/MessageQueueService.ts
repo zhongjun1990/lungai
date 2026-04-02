@@ -4,8 +4,8 @@ import { logger } from '../utils/logger';
 import { AnalysisTask } from '../types';
 
 class MessageQueueService {
-  private connection: amqp.Connection | null = null;
-  private channel: amqp.Channel | null = null;
+  private connection: any = null;
+  private channel: any = null;
   private isConnected = false;
 
   async connect(): Promise<void> {
@@ -51,7 +51,7 @@ class MessageQueueService {
         this.reconnect();
       });
 
-      this.connection.on('error', (err) => {
+      this.connection.on('error', (err: any) => {
         logger.error('RabbitMQ connection error:', err);
         this.isConnected = false;
       });
@@ -125,7 +125,7 @@ class MessageQueueService {
       throw new Error('RabbitMQ not connected');
     }
 
-    await this.channel.consume(config.rabbitmq.taskQueue, async (msg) => {
+    await this.channel.consume(config.rabbitmq.taskQueue, async (msg: any) => {
       if (msg) {
         try {
           const task: AnalysisTask = JSON.parse(msg.content.toString());
@@ -147,7 +147,7 @@ class MessageQueueService {
       throw new Error('RabbitMQ not connected');
     }
 
-    await this.channel.consume(config.rabbitmq.resultQueue, async (msg) => {
+    await this.channel.consume(config.rabbitmq.resultQueue, async (msg: any) => {
       if (msg) {
         try {
           const { taskId, result } = JSON.parse(msg.content.toString());
