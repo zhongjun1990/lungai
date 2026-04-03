@@ -1,23 +1,13 @@
 import { create } from 'zustand';
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  role: 'admin' | 'radiologist' | 'technician' | 'viewer';
-  tenantId: string;
-  status: 'active' | 'inactive' | 'suspended';
-  createdAt: Date;
-  updatedAt: Date;
-  lastLoginAt?: Date;
-}
+import { authApi, usersApi } from '../api';
+import type { User } from '../api/types';
 
 interface StoreState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string, tenantId: string) => Promise<void>;
+  logout: () => Promise<void>;
   setUser: (user: User) => void;
 }
 
@@ -26,24 +16,22 @@ export const useStore = create<StoreState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
 
-  login: async (_email: string, _password: string) => {
+  login: async (email: string, password: string, tenantId: string) => {
     set({ isLoading: true });
 
     try {
-      // TODO: Implement real login API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Call login API
+      await authApi.login({
+        email,
+        password,
+        tenantId,
+      });
+
+      // Get current user info
+      const user = await usersApi.getCurrentUser();
 
       set({
-        user: {
-          id: 'a1b2c3d4-5678-90ef-ghij-klmnopqrstuv',
-          email: 'admin@hospital.com',
-          fullName: 'System Administrator',
-          role: 'admin',
-          tenantId: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-          status: 'active',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        user,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -54,11 +42,17 @@ export const useStore = create<StoreState>((set) => ({
     }
   },
 
-  logout: () => {
-    set({
-      user: null,
-      isAuthenticated: false,
-    });
+  logout: async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      set({
+        user: null,
+        isAuthenticated: false,
+      });
+    }
   },
 
   setUser: (user) => {

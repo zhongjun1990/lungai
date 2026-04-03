@@ -1,13 +1,23 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useStore } from '../store/useStore';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const { user, logout } = useStore();
 
   const isActive = (path: string) => {
     if (path === '/' && location.pathname === '/') return true;
     if (path !== '/' && location.pathname.startsWith(path)) return true;
     return false;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -42,8 +52,22 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-medium text-primary">A</span>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-medium text-text">{user?.fullName}</p>
+                <p className="text-xs text-muted">{user?.email}</p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
+                  {user?.fullName?.charAt(0) || 'A'}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="btn btn-outline text-sm"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
