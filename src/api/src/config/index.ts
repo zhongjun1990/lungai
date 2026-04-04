@@ -67,4 +67,28 @@ export const config = {
     max: 1000, // limit each IP to 1000 requests per windowMs
     fileUploadMax: 100, // limit file uploads to 100 per windowMs
   },
+
+  // Stripe Payment
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    priceIds: {
+      free: process.env.STRIPE_PRICE_ID_FREE || '',
+      pro: process.env.STRIPE_PRICE_ID_PRO || '',
+      enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE || '',
+    },
+  },
+
+  // Supabase
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    anonKey: process.env.SUPABASE_ANON_KEY || '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  },
+
+  // Vercel Deployment
+  vercel: {
+    url: process.env.VERCEL_URL || '',
+    apiUrl: process.env.API_URL || '',
+  },
 };

@@ -47,6 +47,7 @@ const Navbar: React.FC = () => {
               <NavItem path="/patients" label="Patients" isActive={isActive('/patients')} />
               <NavItem path="/studies" label="Studies" isActive={isActive('/studies')} />
               <NavItem path="/reports" label="Reports" isActive={isActive('/reports')} />
+              <NavItem path="/pricing" label="Pricing" isActive={isActive('/pricing')} />
               <NavItem path="/settings" label="Settings" isActive={isActive('/settings')} />
             </div>
           </div>

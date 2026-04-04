@@ -18,6 +18,7 @@ import { patientsRouter } from './routes/patients';
 import { studiesRouter } from './routes/studies';
 import { analysisRouter } from './routes/analysis';
 import { reportsRouter } from './routes/reports';
+import { billingRouter } from './routes/billing';
 import { systemRouter } from './routes/system';
 import { connectMongoDB } from './database/mongodb';
 import { connectRedis } from './database/redis';
@@ -77,6 +78,7 @@ app.use('/v1/patients', patientsRouter);
 app.use('/v1/studies', studiesRouter);
 app.use('/v1/analysis-tasks', analysisRouter);
 app.use('/v1/reports', reportsRouter);
+app.use('/v1/billing', billingRouter);
 app.use('/v1/system', systemRouter);
 
 // 404 handler

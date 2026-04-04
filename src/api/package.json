@@ -30,6 +30,7 @@
     "pino": "^8.17.2",
     "pino-pretty": "^10.2.3",
     "redis": "^4.6.12",
+    "stripe": "^14.25.0",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^9.0.1",
     "yamljs": "^0.3.0",

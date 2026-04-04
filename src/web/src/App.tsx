@@ -8,6 +8,7 @@ import Patients from './pages/Patients';
 import Studies from './pages/Studies';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import Pricing from './pages/Pricing';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -88,6 +89,10 @@ const App: React.FC = () => {
             <Settings />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/pricing"
+        element={<Pricing />}
       />
     </Routes>
   );
