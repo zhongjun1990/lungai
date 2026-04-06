@@ -48,16 +48,16 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="card-body">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link to="/patients/new" className="btn btn-primary">
+            <Link to="/app/patients" className="btn btn-primary">
               Add Patient
             </Link>
-            <Link to="/studies/new" className="btn btn-primary">
+            <Link to="/app/studies" className="btn btn-primary">
               Upload Study
             </Link>
-            <Link to="/analysis/new" className="btn btn-secondary">
+            <Link to="/app/studies" className="btn btn-secondary">
               New Analysis
             </Link>
-            <Link to="/reports" className="btn btn-outline">
+            <Link to="/app/reports" className="btn btn-outline">
               View Reports
             </Link>
           </div>
@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
         <div className="card">
           <div className="card-header flex justify-between items-center">
             <h2 className="text-lg font-semibold">Recent Studies</h2>
-            <Link to="/studies" className="text-sm text-primary hover:underline">
+            <Link to="/app/studies" className="text-sm text-primary hover:underline">
               View All
             </Link>
           </div>
@@ -104,7 +104,7 @@ const Dashboard: React.FC = () => {
         <div className="card">
           <div className="card-header flex justify-between items-center">
             <h2 className="text-lg font-semibold">Recent Reports</h2>
-            <Link to="/reports" className="text-sm text-primary hover:underline">
+            <Link to="/app/reports" className="text-sm text-primary hover:underline">
               View All
             </Link>
           </div>

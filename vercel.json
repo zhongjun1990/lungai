@@ -1,13 +1,11 @@
 {
   "framework": "vite",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
+  "buildCommand": "cd src/web && npm install && npm run build",
+  "devCommand": "cd src/web && npm run dev",
   "installCommand": "npm install",
   "regions": ["iad1"],
   "routes": [
-    { "src": "/api/(.*)", "dest": "http://localhost:3000/api/$1" },
-    { "src": "/health", "dest": "http://localhost:3000/health" },
-    { "src": "/(.*)", "dest": "/dist/$1" }
+    { "src": "/(.*)", "dest": "/src/web/dist/$1" }
   ],
   "env": {
     "VITE_API_URL": "@vite_api_url",
@@ -15,11 +13,12 @@
   },
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
   ]

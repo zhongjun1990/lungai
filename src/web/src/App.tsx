@@ -9,6 +9,7 @@ import Studies from './pages/Studies';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Pricing from './pages/Pricing';
+import Landing from './pages/Landing';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -39,19 +40,17 @@ const App: React.FC = () => {
       <Route
         path="/login"
         element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+          isAuthenticated ? <Navigate to="/app" replace /> : <Login />
         }
       />
       <Route
         path="/"
         element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
+          isAuthenticated ? <Navigate to="/app" replace /> : <Landing />
         }
       />
       <Route
-        path="/dashboard"
+        path="/app"
         element={
           <ProtectedRoute>
             <Dashboard />
@@ -59,7 +58,15 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/patients"
+        path="/app/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients"
         element={
           <ProtectedRoute>
             <Patients />
@@ -67,7 +74,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/studies"
+        path="/app/studies"
         element={
           <ProtectedRoute>
             <Studies />
@@ -75,7 +82,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/reports"
+        path="/app/reports"
         element={
           <ProtectedRoute>
             <Reports />
@@ -83,7 +90,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/settings"
+        path="/app/settings"
         element={
           <ProtectedRoute>
             <Settings />

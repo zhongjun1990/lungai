@@ -36,7 +36,7 @@ const Pricing: React.FC = () => {
     try {
       if (plan.id === 'free') {
         // For free tier, just update the user preference
-        navigate('/dashboard');
+        navigate('/app');
       } else {
         const origin = window.location.origin;
         const result = await billingApi.createCheckout(
