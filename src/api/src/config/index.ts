@@ -91,4 +91,12 @@ export const config = {
     url: process.env.VERCEL_URL || '',
     apiUrl: process.env.API_URL || '',
   },
+
+  // Email (SendGrid)
+  email: {
+    sendgridApiKey: process.env.SENDGRID_API_KEY || '',
+    fromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@lungai.com',
+    fromName: process.env.EMAIL_FROM_NAME || 'LungAI',
+    replyToAddress: process.env.EMAIL_REPLY_TO || 'contact@lungai.com',
+  },
 };

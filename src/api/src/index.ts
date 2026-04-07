@@ -20,6 +20,7 @@ import { analysisRouter } from './routes/analysis';
 import { reportsRouter } from './routes/reports';
 import { billingRouter } from './routes/billing';
 import { systemRouter } from './routes/system';
+import { emailRouter } from './routes/email';
 import { connectMongoDB } from './database/mongodb';
 import { connectRedis } from './database/redis';
 
@@ -80,6 +81,7 @@ app.use('/v1/analysis-tasks', analysisRouter);
 app.use('/v1/reports', reportsRouter);
 app.use('/v1/billing', billingRouter);
 app.use('/v1/system', systemRouter);
+app.use('/v1/email', emailRouter);
 
 // 404 handler
 app.use('*', (req, res) => {
