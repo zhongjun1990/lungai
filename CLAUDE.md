@@ -12,8 +12,8 @@
 - Build: `cd src/web && npm install && npm run build`
 - Auto-deploy on push to `main` branch (if GitHub integration is connected)
 - GitHub repo: `github.com/zhongjun1990/lungai`
-- **MISSING**: Vercel project name / production URL
-- **MISSING**: Vercel API token (to trigger redeploy via CLI)
+- **Production URL**: `https://lungai.vercel.app`
+- **Nice-to-have**: Vercel API token (for redeploy triggers via CLI)
 
 **Backend** (`src/api/`, `src/ai/`):
 - Platform: AWS ECS (Docker)
@@ -23,7 +23,7 @@
 
 ## Email Infrastructure (SendGrid)
 
-**Status**: Code implemented, awaiting SendGrid API key.
+**Status**: Code implemented, not in active use (Postfix SMTP relay confirmed working per CEO).
 
 - Service: `src/api/src/services/email.ts` (SendGrid `@sendgrid/mail`)
 - Routes: `src/api/src/routes/email.ts`
